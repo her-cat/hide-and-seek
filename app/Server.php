@@ -75,7 +75,7 @@ class Server
         $server->push($frame->fd, 'success');
     }
 
-    public function onClose($server, $fd)
+    public function onClose(Websocket $server, $fd)
     {
         Log::log(sprintf('client close fd：%d', $fd));
     }
