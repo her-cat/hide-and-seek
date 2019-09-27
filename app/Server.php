@@ -4,6 +4,8 @@ namespace App;
 
 use App\Manager\ExceptionHandler;
 use App\Manager\Log;
+use Swoole\Http\Request;
+use Swoole\WebSocket\Frame;
 use Swoole\Websocket\Server as Websocket;
 
 class Server
@@ -14,6 +16,7 @@ class Server
     const CONFIG = [
         'worker_num' => 4,
         'enable_static_handler' => true,
+        'document_root' => null,
     ];
 
     /**
@@ -41,31 +44,35 @@ class Server
 
     public function run()
     {
+        if (empty($this->websocket->setting['document_root'])) {
+            Log::notice('The "document_root" not configured.');
+        }
+
         $this->websocket->start();
     }
 
-    public function onStart($server)
+    public function onStart(Websocket $server)
     {
         @swoole_set_process_name('hide-and-seek');
 
         Log::info(sprintf("master start(listen on %s:%s)", $this->websocket->host, $this->websocket->port));
     }
 
-    public function onWorkerStart($server, $workerId)
+    public function onWorkerStart(Websocket $server, int $workerId)
     {
         Log::info(sprintf("server: onWorkerStart, worker_id:%s", $workerId));
     }
 
-    public function onOpen($server, $request)
+    public function onOpen(Websocket $server, Request $request)
     {
         Log::info(sprintf('client open fd：%d', $request->fd));
     }
 
-    public function onMessage($server, $request)
+    public function onMessage(Websocket $server, Frame $frame)
     {
-        Log::info(sprintf('client fd: %s message: %s', $request->fd, $request->data));
+        Log::info(sprintf('client fd: %s message: %s', $frame->fd, $frame->data));
 
-        $server->push($request->fd, 'success');
+        $server->push($frame->fd, 'success');
     }
 
     public function onClose($server, $fd)
