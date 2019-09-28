@@ -2,8 +2,11 @@
 
 namespace App;
 
+use App\Manager\DataCenter;
 use App\Manager\ExceptionHandler;
 use App\Manager\Log;
+use App\Manager\Logic;
+use App\Manager\TaskManager;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Frame;
 use Swoole\Websocket\Server as Websocket;
@@ -18,11 +21,18 @@ class Server
 
     const CONFIG = [
         'worker_num' => 4,
+        'task_worker_num' => 4,
+        'dispatch_mode' => 5,
         'enable_static_handler' => true,
         'document_root' => null,
     ];
 
     const CLIENT_CODE_MATCH_PLAYER = 600;
+
+    /**
+     * @var Logic
+     */
+    private $logic;
 
     /**
      * @var Websocket
@@ -31,9 +41,13 @@ class Server
 
     public function __construct(string $host = null, string $port = null, array $config = [])
     {
+        $this->logic = new Logic();
+
         $this->websocket = new Websocket($host ?? self::HOST, $port ?? self::PORT);
         $this->websocket->set(array_merge(self::CONFIG, $config));
         $this->websocket->listen($host ?? self::HOST, $config['front_port'] ?? self::FRONTEND_PORT, SWOOLE_SOCK_TCP);
+
+        DataCenter::init();
 
         $this->setWebsocketCallback();
 
@@ -47,6 +61,8 @@ class Server
         $this->websocket->on('open', [$this, 'onOpen']);
         $this->websocket->on('message', [$this, 'onMessage']);
         $this->websocket->on('close', [$this, 'onClose']);
+        $this->websocket->on('task', [$this, 'onTask']);
+        $this->websocket->on('finish', [$this, 'onFinish']);
     }
 
     private function bootstrapException(ExceptionHandler $handler)
@@ -76,16 +92,29 @@ class Server
     public function onWorkerStart(Websocket $server, int $workerId)
     {
         Log::info(sprintf("server: onWorkerStart, worker_id:%s", $workerId));
+
+        DataCenter::$server = $server;
     }
 
     public function onOpen(Websocket $server, Request $request)
     {
         Log::info(sprintf('client open fd：%d', $request->fd));
+
+        DataCenter::setPlayerInfo($request->get['player_id'], $request->fd);
     }
 
     public function onMessage(Websocket $server, Frame $frame)
     {
         Log::info(sprintf('client fd: %s message: %s', $frame->fd, $frame->data));
+
+        $data = json_decode($frame->data, true);
+        $playerId = DataCenter::getPlayerId($frame->fd);
+
+        switch ($data['code']) {
+            case self::CLIENT_CODE_MATCH_PLAYER:
+                $this->logic->matchPlayer($playerId);
+                break;
+        }
 
         $server->push($frame->fd, 'success');
     }
@@ -93,5 +122,40 @@ class Server
     public function onClose(Websocket $server, $fd)
     {
         Log::log(sprintf('client close fd：%d', $fd));
+
+        DataCenter::delPlayerInfo($fd);
+    }
+
+    public function onTask(Websocket $server, $taskId, $srcWorkerId, array $data)
+    {
+        Log::info('onTask', $data);
+
+        $result = false;
+
+        switch ($data['code']) {
+            case TaskManager::TASK_CODE_FIND_PLAYER:
+                $ret = TaskManager::findPlayer();
+                if (!empty($ret)) {
+                    $result['data'] = $ret;
+                }
+                break;
+        }
+
+        if (!empty($result)) {
+            Log::info('find player!');
+            $result['code'] = $data['code'];
+            return $result;
+        }
+    }
+
+    public function onFinish(Websocket $server, $taskId, $data)
+    {
+        Log::info('onFinish', $data);
+
+        $redPlayerFd = DataCenter::getPlayerFd($data['data']['red_player']);
+        $server->push($redPlayerFd, sprintf('your enemy:%s', $data['data']['blue_player']));
+
+        $bluePlayerFd = DataCenter::getPlayerFd($data['data']['blue_player']);
+        $server->push($bluePlayerFd, sprintf('your enemy:%s', $data['data']['red_player']));
     }
 }

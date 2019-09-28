@@ -10,7 +10,8 @@
         }
     ],
     "require": {
-        "ext-json": "*"
+        "ext-json": "*",
+        "predis/predis": "^1.1"
     },
     "autoload": {
         "psr-4": {

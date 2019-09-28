@@ -14,9 +14,13 @@ namespace App\Manager;
 class Log
 {
     const INFO = 'INFO';
+
     const DEBUG = 'DEBUG';
+
     const NOTICE = 'NOTICE';
+
     const ERROR = 'ERROR';
+
     const WARING = 'WARING';
 
     protected static $levels = [

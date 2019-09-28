@@ -8,7 +8,11 @@
 </head>
 <body>
     <div id="app">
-
+        <label>
+            玩家ID：
+            <input type="text" :value="playerId">
+        </label>
+        <button @click="matchPlayer">匹配</button>
     </div>
 </body>
 
@@ -17,16 +21,17 @@
         el: '#app',
         data: {
             websocket: null,
+            playerId: 'player_' + Math.round(Math.random() * 1000),
         },
         created() {
             this.initWebSocket();
         },
         destroyed() {
-            this.websocket.close() //离开路由之后断开websocket连接
+            this.websocket.close();
         },
         methods: {
             initWebSocket() {
-                const url = 'ws://0.0.0.0:8811';
+                const url = 'ws://0.0.0.0:8811?player_id=' + this.playerId;
                 this.websocket = new WebSocket(url);
                 this.websocket.onopen = this.onWebsocketOpen;
                 this.websocket.onmessage = this.onWebsocketMessage;
@@ -34,19 +39,23 @@
                 this.websocket.onclose = this.onWebsocketClose();
             },
             onWebsocketOpen() {
-                let action = {"test": "12345"};
-                this.sendWebsocketData(action);
+
             },
             onWebsocketMessage(e) {
                 let message = JSON.parse(e.data);
             },
-            onWebsocketError() {},
+            onWebsocketError() {
+                this.initWebSocket();
+            },
             onWebsocketClose(e) {
                 console.log('断开连接', e);
             },
             sendWebsocketData(data) {
                 this.websocket.send(JSON.stringify(data));
-            }
+            },
+            matchPlayer() {
+                this.sendWebsocketData({"code": 600});
+            },
         }
     })
 </script>
