@@ -23,35 +23,34 @@ class DataCenter
 
     public static function init()
     {
-        $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
-        self::redis()->del([$key]);
+        $keys = [sprintf('%s:player_wait_list', self::CACHE_PREFIX)];
 
-        $key = sprintf('%s:player_id:*', self::CACHE_PREFIX);
-        self::redis()->del(self::redis()->keys($key));
+        $keys = array_merge($keys, self::redis()->keys(sprintf('%s:player_id:*', self::CACHE_PREFIX)));
+        $keys = array_merge($keys, self::redis()->keys(sprintf('%s:player_fd:*', self::CACHE_PREFIX)));
+        $keys = array_merge($keys, self::redis()->keys(sprintf('%s:player_room_id:*', self::CACHE_PREFIX)));
 
-        $key = sprintf('%s:player_fd:*', self::CACHE_PREFIX);
-        self::redis()->del(self::redis()->keys($key));
+        self::redis()->del($keys);
     }
 
     public static function getPlayerWaitListLen()
     {
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
-        return self::redis()->llen($key);
+        return self::redis()->scard($key);
     }
 
     public static function pushPlayerToWaitList(string $playerId)
     {
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
-        return self::redis()->lpush($key, [$playerId]);
+        return self::redis()->sadd($key, [$playerId]);
     }
 
     public static function popPlayerFromWaitList()
     {
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
-        return self::redis()->rpop($key);
+        return self::redis()->spop($key);
     }
 
     public static function delPlayerWaitList()
@@ -118,5 +117,26 @@ class DataCenter
         if (is_string($playerId)) {
             self::delPlayerFd($playerId);
         }
+    }
+
+    public static function setPlayerRoomId(string $playerId, string $roomId)
+    {
+        $key = sprintf('%s:player_room_id:%s', self::CACHE_PREFIX, $playerId);
+
+        self::redis()->set($key, $roomId);
+    }
+
+    public static function getPlayerRoomId($playerId)
+    {
+        $key = sprintf('%s:player_room_id:%s', self::CACHE_PREFIX, $playerId);
+
+        return self::redis()->get($key);
+    }
+
+    public static function delPlayerRoomId($playerId)
+    {
+        $key = sprintf('%s:player_room_id:%s', self::CACHE_PREFIX, $playerId);
+
+        self::redis()->del([$key]);
     }
 }

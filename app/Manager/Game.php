@@ -115,4 +115,14 @@ class Game
 
         return $result;
     }
+
+    public function getMapData()
+    {
+        return $this->gameMap->getMapData();
+    }
+
+    public function getPlayers()
+    {
+        return $this->players;
+    }
 }

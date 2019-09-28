@@ -6,6 +6,7 @@ use App\Manager\DataCenter;
 use App\Manager\ExceptionHandler;
 use App\Manager\Log;
 use App\Manager\Logic;
+use App\Manager\Sender;
 use App\Manager\TaskManager;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Frame;
@@ -29,6 +30,10 @@ class Server
 
     const CLIENT_CODE_MATCH_PLAYER = 600;
 
+    const CLIENT_CODE_START_ROOM = 601;
+
+    const CLIENT_CODE_MOVE_PLAYER = 602;
+
     /**
      * @var Logic
      */
@@ -46,8 +51,6 @@ class Server
         $this->websocket = new Websocket($host ?? self::HOST, $port ?? self::PORT);
         $this->websocket->set(array_merge(self::CONFIG, $config));
         $this->websocket->listen($host ?? self::HOST, $config['front_port'] ?? self::FRONTEND_PORT, SWOOLE_SOCK_TCP);
-
-        DataCenter::init();
 
         $this->setWebsocketCallback();
 
@@ -79,6 +82,8 @@ class Server
             Log::notice('The "document_root" not configured.');
         }
 
+        DataCenter::init();
+
         $this->websocket->start();
     }
 
@@ -101,6 +106,8 @@ class Server
         Log::info(sprintf('client open fd：%d', $request->fd));
 
         DataCenter::setPlayerInfo($request->get['player_id'], $request->fd);
+
+        Sender::send($request->fd, '', 0, '连接成功!');
     }
 
     public function onMessage(Websocket $server, Frame $frame)
@@ -114,9 +121,15 @@ class Server
             case self::CLIENT_CODE_MATCH_PLAYER:
                 $this->logic->matchPlayer($playerId);
                 break;
+            case self::CLIENT_CODE_START_ROOM:
+                $this->logic->startRoom($data['room_id'], $playerId);
+                break;
+            case self::CLIENT_CODE_MOVE_PLAYER:
+                $this->logic->movePlayer($playerId, $data['direction']);
+                break;
         }
 
-        $server->push($frame->fd, 'success');
+        Sender::send($frame->fd);
     }
 
     public function onClose(Websocket $server, $fd)
@@ -142,7 +155,6 @@ class Server
         }
 
         if (!empty($result)) {
-            Log::info('find player!');
             $result['code'] = $data['code'];
             return $result;
         }
@@ -152,10 +164,13 @@ class Server
     {
         Log::info('onFinish', $data);
 
-        $redPlayerFd = DataCenter::getPlayerFd($data['data']['red_player']);
-        $server->push($redPlayerFd, sprintf('your enemy:%s', $data['data']['blue_player']));
+        $code = $data['code'];
+        $data = $data['data'];
 
-        $bluePlayerFd = DataCenter::getPlayerFd($data['data']['blue_player']);
-        $server->push($bluePlayerFd, sprintf('your enemy:%s', $data['data']['red_player']));
+        switch ($code) {
+            case TaskManager::TASK_CODE_FIND_PLAYER:
+                $this->logic->createRoom($data['red_player'], $data['blue_player']);
+                break;
+        }
     }
 }
