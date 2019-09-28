@@ -11,13 +11,18 @@ use Swoole\Websocket\Server as Websocket;
 class Server
 {
     const HOST = '0.0.0.0';
+
     const PORT = 8811;
+
     const FRONTEND_PORT = 8812;
+
     const CONFIG = [
         'worker_num' => 4,
         'enable_static_handler' => true,
         'document_root' => null,
     ];
+
+    const CLIENT_CODE_MATCH_PLAYER = 600;
 
     /**
      * @var Websocket
@@ -31,6 +36,8 @@ class Server
         $this->websocket->listen($host ?? self::HOST, $config['front_port'] ?? self::FRONTEND_PORT, SWOOLE_SOCK_TCP);
 
         $this->setWebsocketCallback();
+
+        $this->bootstrapException(new ExceptionHandler());
     }
 
     private function setWebsocketCallback()
@@ -40,6 +47,14 @@ class Server
         $this->websocket->on('open', [$this, 'onOpen']);
         $this->websocket->on('message', [$this, 'onMessage']);
         $this->websocket->on('close', [$this, 'onClose']);
+    }
+
+    private function bootstrapException(ExceptionHandler $handler)
+    {
+        error_reporting(-1);
+        set_error_handler([$handler, 'handleError']);
+        set_exception_handler([$handler, 'handleException']);
+        register_shutdown_function([$handler, 'handleShutdown']);
     }
 
     public function run()
