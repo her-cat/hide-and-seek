@@ -152,6 +152,7 @@
 
                 this.matching = true;
                 this.sendWebsocketData({"code": 600});
+                this.bindKeyboardEvent();
             },
             startRoom() {
                 this.sendWebsocketData({'code': 601, 'room_id': this.roomId});
@@ -185,6 +186,25 @@
                 for (let div of divs) {
                     this.removeClass(div, 'clickButton')
                 }
+            },
+            bindKeyboardEvent(e) {
+                let _this = this;
+                document.onkeydown = function(e) {
+                    switch (window.event.keyCode) {
+                        case 37:
+                            _this.clickDirect('left');
+                            break;
+                        case 38:
+                            _this.clickDirect('up');
+                            break;
+                        case 39:
+                            _this.clickDirect('right');
+                            break;
+                        case 40:
+                            _this.clickDirect('down');
+                            break;
+                    }
+                };
             },
         }
     })
