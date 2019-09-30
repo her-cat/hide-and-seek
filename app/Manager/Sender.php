@@ -8,12 +8,14 @@ class Sender
     const MSG_WAIT_PLAYER = 1002;
     const MSG_START_GAME = 1003;
     const MSG_GAME_INFO = 1004;
+    const MSG_GAME_OVER = 1005;
 
     const CODE_MSG = [
         self::MSG_ROOM_ID => '匹配成功',
         self::MSG_WAIT_PLAYER => '等待其他玩家中……',
         self::MSG_START_GAME => '游戏开始啦~',
         self::MSG_GAME_INFO => 'game info',
+        self::MSG_GAME_OVER => '游戏结束啦~',
     ];
 
     public static function send(string $playerFd, $data = '', int $code = 0, string $msg = 'success')

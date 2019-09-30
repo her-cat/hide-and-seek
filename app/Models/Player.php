@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-class Player
+class Player implements \JsonSerializable
 {
     const UP = 'up';
     const DOWN = 'down';
@@ -77,5 +77,13 @@ class Player
     public function getY()
     {
         return $this->y;
+    }
+
+    /**
+     * @return mixed data which can be serialized by <b>json_encode</b>,
+     */
+    public function jsonSerialize()
+    {
+        return ['id' => $this->getId(), 'type' => $this->getType()];
     }
 }

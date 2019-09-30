@@ -63,7 +63,7 @@ class Logic
         $players = $gameManager->getPlayers();
         $mapData= $gameManager->getMapData();
 
-        foreach ($players as $player) {
+        foreach (array_reverse($players) as $player) {
             $mapData[$player->getX()][$player->getY()] = $player->getId();
         }
 
@@ -97,15 +97,45 @@ class Logic
 
     public function movePlayer(string $playerId, string $direction)
     {
+        if (!in_array($direction, Player::DIRECTION)) {
+            Log::error('invalid direction.', func_get_args());
+            return;
+        }
+
         $roomId = DataCenter::getPlayerRoomId($playerId);
 
-        Log::info('room id', [$roomId]);
+        if (isset(DataCenter::$global['rooms'][$roomId]['manager'])) {
 
-        /** @var Game $gameManager */
+            /** @var Game $gameManager */
+            $gameManager = DataCenter::$global['rooms'][$roomId]['manager'];
+
+            $gameManager->playerMove($playerId, $direction);
+
+            $this->sendGameInfo($roomId);
+
+            $this->checkGameOver($roomId);
+        }
+
+    }
+
+    public function checkGameOver(string $roomId)
+    {
+        /**
+         * @var Game $gameManager
+         * @var Player $player
+         */
         $gameManager = DataCenter::$global['rooms'][$roomId]['manager'];
 
-        $gameManager->playerMove($playerId, $direction);
+        if ($gameManager->isGameOver()) {
+            $players = $gameManager->getPlayers();
+            $winner = current($players)->getId();
 
-        $this->sendGameInfo($roomId);
+            foreach ($players as $player) {
+                Sender::sendByPlayerId($player->getId(), ['winner' => $winner], Sender::MSG_GAME_OVER);
+                DataCenter::delPlayerRoomId($player->getId());
+            }
+
+            unset(DataCenter::$global['rooms'][$roomId]);
+        }
     }
 }

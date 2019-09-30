@@ -67,27 +67,27 @@
                     </div>
                 </template>
             </div>
-            <div>
-                <template v-for="i in 5">
-                    <div @mouseup="removeClickClass">
-                        <template v-for="j in 5">
-                            <div v-if="i==2&&j==3" @mousedown="clickDirect('up')" data-direction="up"
-                                 class="gameItem gameButton">上
-                            </div>
-                            <div v-else-if="i==3&&j==2" @mousedown="clickDirect('left')" data-direction="left"
-                                 class="gameItem gameButton">左
-                            </div>
-                            <div v-else-if="i==3&&j==4" @mousedown="clickDirect('right')" data-direction="right"
-                                 class="gameItem gameButton">右
-                            </div>
-                            <div v-else-if="i==4&&j==3" @mousedown="clickDirect('down')" data-direction="down"
-                                 class="gameItem gameButton">下
-                            </div>
-                            <div v-else class="gameItem space">无</div>
-                        </template>
-                    </div>
-                </template>
-            </div>
+<!--            <div>-->
+<!--                <template v-for="i in 5">-->
+<!--                    <div @mouseup="removeClickClass">-->
+<!--                        <template v-for="j in 5">-->
+<!--                            <div v-if="i==2&&j==3" @mousedown="clickDirect('up')" data-direction="up"-->
+<!--                                 class="gameItem gameButton">上-->
+<!--                            </div>-->
+<!--                            <div v-else-if="i==3&&j==2" @mousedown="clickDirect('left')" data-direction="left"-->
+<!--                                 class="gameItem gameButton">左-->
+<!--                            </div>-->
+<!--                            <div v-else-if="i==3&&j==4" @mousedown="clickDirect('right')" data-direction="right"-->
+<!--                                 class="gameItem gameButton">右-->
+<!--                            </div>-->
+<!--                            <div v-else-if="i==4&&j==3" @mousedown="clickDirect('down')" data-direction="down"-->
+<!--                                 class="gameItem gameButton">下-->
+<!--                            </div>-->
+<!--                            <div v-else class="gameItem space">无</div>-->
+<!--                        </template>-->
+<!--                    </div>-->
+<!--                </template>-->
+<!--            </div>-->
         </div>
     </div>
 </body>
@@ -131,8 +131,13 @@
                         this.roomId = data.room_id;
                         this.startRoom();
                         break;
-                    case 1004://游戏数据
+                    case 1004:
                         this.mapData = data.map_data;
+                        break;
+                    case 1005:
+                        setTimeout(function () {
+                            alert('游戏结束~胜者是：' + data.winner)
+                        }, 200);
                         break;
                 }
             },
