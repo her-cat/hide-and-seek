@@ -9,6 +9,7 @@ use App\Manager\Logic;
 use App\Manager\Sender;
 use App\Manager\TaskManager;
 use Swoole\Http\Request;
+use Swoole\Http\Response;
 use Swoole\WebSocket\Frame;
 use Swoole\Websocket\Server as Websocket;
 
@@ -66,6 +67,7 @@ class Server
         $this->websocket->on('close', [$this, 'onClose']);
         $this->websocket->on('task', [$this, 'onTask']);
         $this->websocket->on('finish', [$this, 'onFinish']);
+        $this->websocket->on('request', [$this, 'onRequest']);
     }
 
     private function bootstrapException(ExceptionHandler $handler)
@@ -105,9 +107,15 @@ class Server
     {
         Log::info(sprintf('client open fd：%d', $request->fd));
 
-        DataCenter::setPlayerInfo($request->get['player_id'], $request->fd);
+        $playerId = $request->get['player_id'];
 
-        Sender::send($request->fd, '', 0, '连接成功!');
+        if (empty(DataCenter::getOnlinePlayer($playerId))) {
+            DataCenter::setPlayerInfo($playerId, $request->fd);
+
+            Sender::send($request->fd, '', 0, '连接成功!');
+        } else {
+            $server->disconnect($request->fd, 4000, '该player_id已在线');
+        }
     }
 
     public function onMessage(Websocket $server, Frame $frame)
@@ -134,7 +142,7 @@ class Server
 
     public function onClose(Websocket $server, $fd)
     {
-        Log::log(sprintf('client close fd：%d', $fd));
+        Log::info(sprintf('client close fd：%d', $fd));
 
         DataCenter::delPlayerInfo($fd);
     }
@@ -171,6 +179,20 @@ class Server
             case TaskManager::TASK_CODE_FIND_PLAYER:
                 $this->logic->createRoom($data['red_player'], $data['blue_player']);
                 break;
+        }
+    }
+
+    public function onRequest(Request $request, Response $response)
+    {
+        Log::info('onRequest');
+
+        $action = $request->get['action'];
+        if ($action == 'get_online_player') {
+            $data = [
+                'online_player' => DataCenter::getOnlinePlayerLen()
+            ];
+
+            $response->end(json_encode($data));
         }
     }
 }

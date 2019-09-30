@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>HideAndSeek</title>
     <script src="https://cdn.bootcss.com/vue/2.6.10/vue.js"></script>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
     <link rel="icon" href="data:;base64,=">
     <style>
         .gameItem {
@@ -46,6 +47,9 @@
     <div id="app">
         <div v-if="matching" style="display: inline">
             匹配中……
+        </div>
+        <div>
+            当前在线玩家：{{onlinePlayer}}
         </div>
         <label>
             玩家ID：
@@ -93,31 +97,34 @@
 </body>
 
 <script>
-    const CODE_CREATED_ROOM = 1001;
+    const HOST = 'localhost';
 
     let app = new Vue({
         el: '#app',
         data: {
             websocket: null,
-            playerId: 'player_' + Math.round(Math.random() * 1000),
+            onlinePlayer: 0,
+            playerId: '',
             roomId: '',
             matching: false,
             mapData: [],
         },
         created() {
+            this.initPlayerId();
             this.initWebSocket();
+            setInterval(() => this.getServerInfo(), 100)
         },
         destroyed() {
             this.websocket.close();
         },
         methods: {
             initWebSocket() {
-                const url = 'ws://192.168.21.23:8811?player_id=' + this.playerId;
+                const url = 'ws://' + HOST + ':8811?player_id=' + this.playerId;
                 this.websocket = new WebSocket(url);
                 this.websocket.onopen = this.onWebsocketOpen;
                 this.websocket.onmessage = this.onWebsocketMessage;
                 this.websocket.onerror = this.onWebsocketError;
-                this.websocket.onclose = this.onWebsocketClose();
+                this.websocket.onclose = this.onWebsocketClose;
             },
             onWebsocketOpen() {
 
@@ -127,7 +134,7 @@
                 let data = response.data;
 
                 switch (response.code) {
-                    case CODE_CREATED_ROOM:
+                    case 1001:
                         this.roomId = data.room_id;
                         this.startRoom();
                         break;
@@ -146,6 +153,10 @@
             },
             onWebsocketClose(e) {
                 console.log('断开连接', e);
+
+                if (e.code === 4000) {
+                    alert('该player_id已在线');
+                }
             },
             sendWebsocketData(data) {
                 this.websocket.send(JSON.stringify(data));
@@ -211,6 +222,49 @@
                     }
                 };
             },
+            initPlayerId() {
+                let inputPlayerId = this.getUrlParam('player_id')
+                if (inputPlayerId !== '') {
+                    this.playerId = inputPlayerId
+                } else {
+                    this.playerId = 'player_' + Math.round(Math.random() * 1000)
+                }
+            },
+            getUrlParam(paramName) {
+                let url = document.location.toString();
+                let arrObj = url.split("?");
+                if (arrObj.length > 1) {
+                    let arrPara = arrObj[1].split("&");
+                    let arr;
+                    for (let i = 0; i < arrPara.length; i++) {
+                        arr = arrPara[i].split("=");
+                        if (arr !== null && arr[0] === paramName) {
+                            return arr[1];
+                        }
+                    }
+                    return '';
+                }
+                else {
+                    return "";
+                }
+            },
+            getServerInfo() {
+                let that = this;
+                $.ajax({
+                    url: 'http://' + HOST + ':8812',
+                    type: 'get',
+                    dataType: 'json',
+                    data: {
+                        'action': 'get_online_player'
+                    },
+                    success: function (result) {
+                        that.onlinePlayer = result.online_player
+                    },
+                    error: function () {
+
+                    }
+                })
+            }
         }
     })
 </script>

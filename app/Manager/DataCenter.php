@@ -23,7 +23,10 @@ class DataCenter
 
     public static function init()
     {
-        $keys = [sprintf('%s:player_wait_list', self::CACHE_PREFIX)];
+        $keys = [
+            sprintf('%s:player_wait_list', self::CACHE_PREFIX),
+            sprintf('%s:online_players', self::CACHE_PREFIX),
+        ];
 
         $keys = array_merge($keys, self::redis()->keys(sprintf('%s:player_id:*', self::CACHE_PREFIX)));
         $keys = array_merge($keys, self::redis()->keys(sprintf('%s:player_fd:*', self::CACHE_PREFIX)));
@@ -51,6 +54,13 @@ class DataCenter
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
         return self::redis()->spop($key);
+    }
+
+    public static function delPlayerFromWaitList(string $playerId)
+    {
+        $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
+
+        self::redis()->srem($key, $playerId);
     }
 
     public static function delPlayerWaitList()
@@ -106,6 +116,7 @@ class DataCenter
     {
         self::setPlayerId($playerFd, $playerId);
         self::setPlayerFd($playerId, $playerFd);
+        self::setOnlinePlayer($playerId);
     }
 
     public static function delPlayerInfo(int $playerFd)
@@ -116,6 +127,8 @@ class DataCenter
 
         if (is_string($playerId)) {
             self::delPlayerFd($playerId);
+            self::delOnlinePlayer($playerId);
+            self::delPlayerFromWaitList($playerId);
         }
     }
 
@@ -126,17 +139,45 @@ class DataCenter
         self::redis()->set($key, $roomId);
     }
 
-    public static function getPlayerRoomId($playerId)
+    public static function getPlayerRoomId(string $playerId)
     {
         $key = sprintf('%s:player_room_id:%s', self::CACHE_PREFIX, $playerId);
 
         return self::redis()->get($key);
     }
 
-    public static function delPlayerRoomId($playerId)
+    public static function delPlayerRoomId(string $playerId)
     {
         $key = sprintf('%s:player_room_id:%s', self::CACHE_PREFIX, $playerId);
 
         self::redis()->del([$key]);
+    }
+
+    public static function getOnlinePlayerLen()
+    {
+        $key = sprintf('%s:online_players', self::CACHE_PREFIX);
+
+        return self::redis()->hlen($key);
+    }
+
+    public static function setOnlinePlayer(string $playerId)
+    {
+        $key = sprintf('%s:online_players', self::CACHE_PREFIX);
+
+        self::redis()->hset($key, $playerId, 1);
+    }
+
+    public static function getOnlinePlayer(string $playerId)
+    {
+        $key = sprintf('%s:online_players', self::CACHE_PREFIX);
+
+        return self::redis()->hget($key, $playerId);
+    }
+
+    public static function delOnlinePlayer(string $playerId)
+    {
+        $key = sprintf('%s:online_players', self::CACHE_PREFIX);
+
+        self::redis()->hdel($key, [$playerId]);
     }
 }
