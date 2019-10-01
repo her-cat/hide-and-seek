@@ -35,6 +35,12 @@ class Server
 
     const CLIENT_CODE_MOVE_PLAYER = 602;
 
+    const CLIENT_CODE_MAKE_CHALLENGE = 603;
+
+    const CLIENT_CODE_ACCEPT_CHALLENGE = 604;
+
+    const CLIENT_CODE_REFUSE_CHALLENGE = 605;
+
     /**
      * @var Logic
      */
@@ -125,6 +131,8 @@ class Server
         $data = json_decode($frame->data, true);
         $playerId = DataCenter::getPlayerId($frame->fd);
 
+        Log::info('onMessage,', [$data, $playerId]);
+
         switch ($data['code']) {
             case self::CLIENT_CODE_MATCH_PLAYER:
                 $this->logic->matchPlayer($playerId);
@@ -134,6 +142,15 @@ class Server
                 break;
             case self::CLIENT_CODE_MOVE_PLAYER:
                 $this->logic->movePlayer($playerId, $data['direction']);
+                break;
+            case self::CLIENT_CODE_MAKE_CHALLENGE:
+                $this->logic->makeChallenge($data['opponent_id'], $playerId);
+                break;
+            case self::CLIENT_CODE_ACCEPT_CHALLENGE:
+                $this->logic->acceptChallenge($data['challenger_id'], $playerId);
+                break;
+            case self::CLIENT_CODE_REFUSE_CHALLENGE:
+                $this->logic->refuseChallenge($data['challenger_id']);
                 break;
         }
 

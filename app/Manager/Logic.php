@@ -143,6 +143,10 @@ class Logic
 
     public function closeRoom($closerId)
     {
+        if (empty($closerId)) {
+            return;
+        }
+
         $roomId = DataCenter::getPlayerRoomId($closerId);
 
         if (!empty($roomId)) {
@@ -163,5 +167,28 @@ class Logic
 
             unset(DataCenter::$global['rooms'][$roomId]);
         }
+    }
+
+    public function makeChallenge(string $opponentId, string $playerId)
+    {
+        Log::info('makeChallenge');
+        if (empty(DataCenter::getOnlinePlayer($opponentId))) {
+            Sender::sendByPlayerId($playerId, '', Sender::MSG_OPPONENT_OFFLINE);
+        } else {
+            $data = [
+                'challenger_id' => $playerId
+            ];
+            Sender::sendByPlayerId($opponentId, $data, Sender::MSG_MAKE_CHALLENGE);
+        }
+    }
+
+    public function acceptChallenge(string $challengerId, string $playerId)
+    {
+        $this->createRoom($challengerId, $playerId);
+    }
+
+    public function refuseChallenge(string $challengerId)
+    {
+        Sender::sendByPlayerId($challengerId, Sender::MSG_REFUSE_CHALLENGE);
     }
 }

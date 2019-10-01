@@ -48,6 +48,13 @@
         <div v-if="matching" style="display: inline">
             匹配中……
         </div>
+        <div v-else>
+            <div v-if="!roomId" style="padding-top: 5px;">
+                对手ID：
+                <input type="text" v-model="opponentId">
+                <button @click="makeChallenge">挑战</button>
+            </div>
+        </div>
         <div>
             当前在线玩家：{{onlinePlayer}}
         </div>
@@ -104,7 +111,7 @@
 </body>
 
 <script>
-    const HOST = 'localhost';
+    const HOST = '0.0.0.0';
 
     let app = new Vue({
         el: '#app',
@@ -116,6 +123,7 @@
             matching: false,
             mapData: [],
             playersRank: null,
+            opponentId:null,
         },
         created() {
             this.initPlayerId();
@@ -156,6 +164,27 @@
                         break;
                     case 1006:
                         alert('你的敌人跑路了');
+                        break;
+                    case 1007:
+                        alert("对手不在线");
+                        break;
+                    case 1008:
+                        let challengerId = data.challenger_id;
+                        let msg = "玩家 " + challengerId + " 邀请你进行对战，是否接受";
+                        let actions = {
+                            "code": 604,
+                            "challenger_id": challengerId
+                        };
+                        if (!confirm(msg)) {
+                            actions = {
+                                "code": 605,
+                                "challenger_id": challengerId
+                            };
+                        }
+                        this.sendWebsocketData(actions);
+                        break;
+                    case 1009:
+                        alert("对方拒绝了你的挑战");
                         break;
                 }
             },
@@ -289,6 +318,16 @@
                     error: function () {
 
                     }
+                });
+            },
+            makeChallenge() {
+                if (!this.opponentId) {
+                    alert('请输入对手ID');
+                    return;
+                }
+                this.sendWebsocketData({
+                    "code": 603,
+                    "opponent_id": this.opponentId
                 });
             }
         }
