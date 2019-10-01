@@ -130,6 +130,8 @@ class Logic
             $players = $gameManager->getPlayers();
             $winner = current($players)->getId();
 
+            DataCenter::addPlayerWinTimes($winner);
+
             foreach ($players as $player) {
                 Sender::sendByPlayerId($player->getId(), ['winner' => $winner], Sender::MSG_GAME_OVER);
                 DataCenter::delPlayerRoomId($player->getId());

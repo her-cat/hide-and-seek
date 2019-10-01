@@ -186,12 +186,23 @@ class Server
     {
         Log::info('onRequest');
 
-        $action = $request->get['action'];
-        if ($action == 'get_online_player') {
-            $data = [
-                'online_player' => DataCenter::getOnlinePlayerLen()
-            ];
+        $data = [];
 
+        switch ($request->get['action']) {
+            case 'get_online_player':
+                $data = [
+                    'online_player' => DataCenter::getOnlinePlayerLen(),
+                ];
+                break;
+            case 'get_player_rank':
+                $data = [
+                    'players_rank' => DataCenter::getPlayerRank(),
+                ];
+                break;
+
+        }
+
+        if (!empty($data)) {
             $response->end(json_encode($data));
         }
     }

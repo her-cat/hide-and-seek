@@ -180,4 +180,18 @@ class DataCenter
 
         self::redis()->hdel($key, [$playerId]);
     }
+
+    public static function addPlayerWinTimes($playerId)
+    {
+        $key = sprintf('%s:player_rank', self::CACHE_PREFIX);
+
+        self::redis()->zincrby($key, 1, $playerId);
+    }
+
+    public static function getPlayerRank()
+    {
+        $key = sprintf('%s:player_rank', self::CACHE_PREFIX);
+
+        return self::redis()->zrevrange($key, 0, 9, ['WITHSCORES' => true]);
+    }
 }

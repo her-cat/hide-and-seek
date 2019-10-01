@@ -51,6 +51,13 @@
         <div>
             当前在线玩家：{{onlinePlayer}}
         </div>
+        <div v-if="playersRank">
+            <br/>
+            <template v-for="times, player in playersRank">
+                玩家：{{ player }} 胜利次数：{{ times }} <br/>
+            </template>
+            <br/>
+        </div>
         <label>
             玩家ID：
             <input type="text" :value="playerId">
@@ -108,11 +115,12 @@
             roomId: '',
             matching: false,
             mapData: [],
+            playersRank: null,
         },
         created() {
             this.initPlayerId();
             this.initWebSocket();
-            setInterval(() => this.getServerInfo(), 100)
+            setInterval(() => this.getServerInfo(), 1500)
         },
         destroyed() {
             this.websocket.close();
@@ -263,7 +271,22 @@
                     error: function () {
 
                     }
-                })
+                });
+
+                $.ajax({
+                    url: 'http://' + HOST + ':8812',
+                    type: 'get',
+                    dataType: 'json',
+                    data: {
+                        'action': 'get_player_rank'
+                    },
+                    success: function (result) {
+                        that.playersRank = result.players_rank
+                    },
+                    error: function () {
+
+                    }
+                });
             }
         }
     })
