@@ -144,6 +144,8 @@ class Server
     {
         Log::info(sprintf('client close fd：%d', $fd));
 
+        $this->logic->closeRoom(DataCenter::getPlayerId($fd));
+
         DataCenter::delPlayerInfo($fd);
     }
 

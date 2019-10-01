@@ -9,6 +9,7 @@ class Sender
     const MSG_START_GAME = 1003;
     const MSG_GAME_INFO = 1004;
     const MSG_GAME_OVER = 1005;
+    const MSG_GAME_CLOSE = 1006;
 
     const CODE_MSG = [
         self::MSG_ROOM_ID => '匹配成功',
@@ -16,6 +17,7 @@ class Sender
         self::MSG_START_GAME => '游戏开始啦~',
         self::MSG_GAME_INFO => 'game info',
         self::MSG_GAME_OVER => '游戏结束啦~',
+        self::MSG_GAME_CLOSE => '你的敌人跑路了',
     ];
 
     public static function send(string $playerFd, $data = '', int $code = 0, string $msg = 'success')
