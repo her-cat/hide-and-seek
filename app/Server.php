@@ -131,8 +131,6 @@ class Server
         $data = json_decode($frame->data, true);
         $playerId = DataCenter::getPlayerId($frame->fd);
 
-        Log::info('onMessage,', [$data, $playerId]);
-
         switch ($data['code']) {
             case self::CLIENT_CODE_MATCH_PLAYER:
                 $this->logic->matchPlayer($playerId);
@@ -153,8 +151,6 @@ class Server
                 $this->logic->refuseChallenge($data['challenger_id']);
                 break;
         }
-
-        Sender::send($frame->fd);
     }
 
     public function onClose(Websocket $server, $fd)

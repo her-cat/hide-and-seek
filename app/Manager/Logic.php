@@ -167,7 +167,6 @@ class Logic
 
     public function makeChallenge(string $opponentId, string $playerId)
     {
-        Log::info('makeChallenge');
         if (empty(DataCenter::getOnlinePlayer($opponentId))) {
             Sender::sendByPlayerId($playerId, '', Sender::MSG_OPPONENT_OFFLINE);
         } else {
