@@ -185,7 +185,7 @@ class Logic
 
     public function refuseChallenge(string $challengerId)
     {
-        Sender::sendByPlayerId($challengerId, Sender::MSG_REFUSE_CHALLENGE);
+        Sender::sendByPlayerId($challengerId, '', Sender::MSG_REFUSE_CHALLENGE);
     }
 
     private function createGameTimer(string $roomId)
