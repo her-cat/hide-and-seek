@@ -55,6 +55,14 @@
                 <button @click="makeChallenge">挑战</button>
             </div>
         </div>
+        <div v-if="roomId">
+            <div>
+                房间号：{{roomId}}
+            </div>
+            <div v-if="timeLimit">
+                剩余时间：{{timeLimit}}
+            </div>
+        </div>
         <div>
             当前在线玩家：{{onlinePlayer}}
         </div>
@@ -124,6 +132,8 @@
             mapData: [],
             playersRank: null,
             opponentId:null,
+            timeLimit: null,
+            timerId: null,
         },
         created() {
             this.initPlayerId();
@@ -156,6 +166,13 @@
                         break;
                     case 1004:
                         this.mapData = data.map_data;
+                        if (!this.timerId) {
+                            this.timeLimit = data.time_limit;
+                            var that = this;
+                            this.timerId = setInterval(function () {
+                                that.timeLimit--
+                            }, 1000);
+                        }
                         break;
                     case 1005:
                         setTimeout(function () {
