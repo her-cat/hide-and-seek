@@ -12,7 +12,7 @@ class DataCenter
     public static $global;
 
     /**
-     * @var Server
+     * @var \Redis
      */
     public static $server;
 
@@ -32,42 +32,42 @@ class DataCenter
         $keys = array_merge($keys, self::redis()->keys(sprintf('%s:player_fd:*', self::CACHE_PREFIX)));
         $keys = array_merge($keys, self::redis()->keys(sprintf('%s:player_room_id:*', self::CACHE_PREFIX)));
 
-        self::redis()->del($keys);
+        self::redis()->del(...$keys);
     }
 
     public static function getPlayerWaitListLen()
     {
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
-        return self::redis()->scard($key);
+        return self::redis()->sCard($key);
     }
 
     public static function pushPlayerToWaitList(string $playerId)
     {
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
-        return self::redis()->sadd($key, [$playerId]);
+        return self::redis()->sAdd($key, $playerId);
     }
 
     public static function popPlayerFromWaitList()
     {
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
-        return self::redis()->spop($key);
+        return self::redis()->sPop($key);
     }
 
     public static function delPlayerFromWaitList(string $playerId)
     {
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
-        self::redis()->srem($key, $playerId);
+        self::redis()->sRem($key, $playerId);
     }
 
     public static function delPlayerWaitList()
     {
         $key = sprintf('%s:player_wait_list', self::CACHE_PREFIX);
 
-        return self::redis()->del([$key]);
+        return self::redis()->del($key);
     }
 
     public static function setPlayerId(int $playerFd, string $playerId)
@@ -88,7 +88,7 @@ class DataCenter
     {
         $key = sprintf('%s:player_id:%s', self::CACHE_PREFIX, $playerFd);
 
-        return self::redis()->del([$key]);
+        return self::redis()->del($key);
     }
 
     public static function setPlayerFd(string $playerId, int $playerFd)
@@ -109,7 +109,7 @@ class DataCenter
     {
         $key = sprintf('%s:player_fd:%s', self::CACHE_PREFIX, $playerId);
 
-        return self::redis()->del([$key]);
+        return self::redis()->del($key);
     }
 
     public static function setPlayerInfo(string $playerId, int $playerFd)
@@ -150,48 +150,48 @@ class DataCenter
     {
         $key = sprintf('%s:player_room_id:%s', self::CACHE_PREFIX, $playerId);
 
-        self::redis()->del([$key]);
+        self::redis()->del($key);
     }
 
     public static function getOnlinePlayerLen()
     {
         $key = sprintf('%s:online_players', self::CACHE_PREFIX);
 
-        return self::redis()->hlen($key);
+        return self::redis()->hLen($key);
     }
 
     public static function setOnlinePlayer(string $playerId)
     {
         $key = sprintf('%s:online_players', self::CACHE_PREFIX);
 
-        self::redis()->hset($key, $playerId, 1);
+        self::redis()->hSet($key, $playerId, 1);
     }
 
     public static function getOnlinePlayer(string $playerId)
     {
         $key = sprintf('%s:online_players', self::CACHE_PREFIX);
 
-        return self::redis()->hget($key, $playerId);
+        return self::redis()->hGet($key, $playerId);
     }
 
     public static function delOnlinePlayer(string $playerId)
     {
         $key = sprintf('%s:online_players', self::CACHE_PREFIX);
 
-        self::redis()->hdel($key, [$playerId]);
+        self::redis()->hDel($key, $playerId);
     }
 
     public static function addPlayerWinTimes($playerId)
     {
         $key = sprintf('%s:player_rank', self::CACHE_PREFIX);
 
-        self::redis()->zincrby($key, 1, $playerId);
+        self::redis()->zIncrBy($key, 1, $playerId);
     }
 
     public static function getPlayerRank()
     {
         $key = sprintf('%s:player_rank', self::CACHE_PREFIX);
 
-        return self::redis()->zrevrange($key, 0, 9, ['WITHSCORES' => true]);
+        return self::redis()->zRevRange($key, 0, 9, true);
     }
 }

@@ -2,31 +2,25 @@
 
 namespace App\Lib;
 
-use Predis\Client;
-
 class Redis
 {
-    /**
-     * @var Client
-     */
-    protected static $instance = null;
-
     protected static $config = [
-        'scheme' => 'tcp',
-        'host'   => '0.0.0.0',
+        'host'   => '127.0.0.1',
         'port'   => 6379,
     ];
 
     public static function getInstance(array $config = [])
     {
-        if (is_null(self::$instance)) {
-            self::$instance = new Client(array_merge(self::$config, $config));
+        $config = array_merge(self::$config, $config);
 
-            if (!empty($config['password'])) {
-                self::$instance->auth($config['password']);
-            }
+        $instance = new \Redis();
+
+        $instance->connect($config['host'], $config['port']);
+
+        if (!empty($config['password'])) {
+            $instance->auth($config['password']);
         }
 
-        return self::$instance;
+        return $instance;
     }
 }
